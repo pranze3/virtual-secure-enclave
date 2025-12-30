@@ -1,6 +1,6 @@
 #include <map>
 #include <iostream>
-#include <../inc/regs.h>
+#include "regs.h"
 
 class SecureEnclave {
     private:
