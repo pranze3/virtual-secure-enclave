@@ -9,6 +9,7 @@ int main() {
     hw_write_reg(0x20, 0x1234);
     uint32_t read_value = hw_read_reg(0x20);
 
+    //checking test case
     if (read_value == 0x1234) {
         printf("PASS!\n");
     } else {

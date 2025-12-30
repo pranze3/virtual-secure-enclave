@@ -3,6 +3,7 @@
 #include "regs.h"
 
 class SecureEnclave {
+    //map to handle address-data pairs
     private:
         std::map<uint32_t, uint32_t> registers;
     
@@ -19,6 +20,7 @@ class SecureEnclave {
         }
 };
 
+// creating global variable
 SecureEnclave* enclave_instance = nullptr;
 
 void hw_init() {
