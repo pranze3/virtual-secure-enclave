@@ -1,38 +1,64 @@
-#include <map>
 #include <iostream>
+#include <cstdint>
+#include <cstring>
 #include "regs.h"
 
 class SecureEnclave {
-    //map to handle the diff address-data pairs
     private:
-        std::map<uint32_t, uint32_t> registers;
-    
+        uint8_t physical_memory[4096];
+
     public:
-        void write(uint32_t addr, uint32_t data) {
-            registers[addr] = data;
+        SecureEnclave() {
+            std::memset(physical_memory, 0, 4096);
+            std::cout << "secure enclave powered up!" <<std::endl;
         }
-    
-        uint32_t read(uint32_t addr) {
-            if (registers.find(addr) != registers.end()) {
-                return registers[addr];
+        
+        void write (uint32_t addr, uint32_t data) {
+            if (addr > 4092) {
+                std::cout << "write out of bounds" <<std::endl;
+                return;
             }
-            return 0xDEADBEEF;
+            //write logic
+            uint8_t *memptr = &physical_memory[addr];
+            volatile uint32_t* castptr = reinterpret_cast<volatile uint32_t*>(memptr);
+            *castptr = data;
         }
+
+        uint32_t read (uint32_t addr) {
+            if (addr > 4092) {
+                std::cout << "read out of bounds" <<std::endl;
+                return 0;
+            }
+
+            //read logic
+            uint8_t *memptr = &physical_memory[addr];
+            volatile uint32_t* castptr = reinterpret_cast<volatile uint32_t*>(memptr);
+            return *castptr;
+        }              
+
 };
 
-// creating global variables
-SecureEnclave* enclave_instance = nullptr;
+    //wrapper for the C firmware
+    SecureEnclave* enclave_instance = nullptr;
 
-void hw_init() {
-    if (!enclave_instance) enclave_instance = new SecureEnclave();
-}
+    extern "C" {
+        void hw_init() {
+            if (enclave_instance == nullptr) {
+                enclave_instance = new SecureEnclave();
+            }
+        }
 
-void hw_write_reg(uint32_t addr, uint32_t data) {
-    if (enclave_instance) enclave_instance->write(addr, data);
-}
+        void hw_write_reg(uint32_t addr, uint32_t data) {
+            if (enclave_instance) {
+                enclave_instance->write(addr, data);
+            }
+        }
 
-uint32_t hw_read_reg(uint32_t addr) {
-    if (enclave_instance) return enclave_instance->read(addr);
-    return 0;
-}
+        uint32_t hw_read_reg(uint32_t addr) {
+            if (enclave_instance) {
+                return enclave_instance->read(addr);
+            }
+            return 0;
+        }
+    }
 
